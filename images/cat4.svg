@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="24" fill="#F7A8C4"/>
+  <!-- ears -->
+  <polygon points="55,70 40,20 90,55" fill="#E56E9A"/>
+  <polygon points="145,70 160,20 110,55" fill="#E56E9A"/>
+  <polygon points="58,66 48,32 82,56" fill="#FCD3E1"/>
+  <polygon points="142,66 152,32 118,56" fill="#FCD3E1"/>
+  <!-- face -->
+  <circle cx="100" cy="115" r="70" fill="#FFEAF2"/>
+  <!-- heart eyes -->
+  <path d="M75,95 C70,88 58,90 58,99 C58,108 75,118 75,118 C75,118 92,108 92,99 C92,90 80,88 75,95 Z" fill="#E23B6C"/>
+  <path d="M125,95 C120,88 108,90 108,99 C108,108 125,118 125,118 C125,118 142,108 142,99 C142,90 130,88 125,95 Z" fill="#E23B6C"/>
+  <!-- nose -->
+  <path d="M94,132 L106,132 L100,140 Z" fill="#E38B7C"/>
+  <!-- smile -->
+  <path d="M82,148 Q100,164 118,148" stroke="#2B2118" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- blush -->
+  <ellipse cx="60" cy="135" rx="10" ry="6" fill="#F79FBD" opacity="0.8"/>
+  <ellipse cx="140" cy="135" rx="10" ry="6" fill="#F79FBD" opacity="0.8"/>
+  <!-- whiskers -->
+  <line x1="20" y1="128" x2="60" y2="123" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+  <line x1="20" y1="142" x2="60" y2="139" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+  <line x1="180" y1="128" x2="140" y2="123" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+  <line x1="180" y1="142" x2="140" y2="139" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pose-a-Cat 🐱</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <h1>Pose-a-Cat <span class="paw">🐾</span></h1>
+    <p class="subtitle">Strike a pose in front of your camera to reveal a cat.</p>
+  </header>
+
+  <main>
+    <section class="stage">
+      <div class="video-wrap">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="overlay"></canvas>
+
+        <div id="cameraOverlayMsg" class="camera-msg">
+          <p>Camera is off.</p>
+          <button id="startBtn" class="btn btn-primary">Start Camera</button>
+        </div>
+
+        <div id="matchFlash" class="match-flash" aria-hidden="true"></div>
+      </div>
+
+      <div class="reveal-panel">
+        <img id="revealImg" src="" alt="" />
+        <div id="revealEmptyState" class="reveal-empty">
+          <p>No pose matched yet.</p>
+          <p class="hint">Calibrate poses below, then strike one!</p>
+        </div>
+        <div id="matchMeter" class="match-meter">
+          <div id="matchMeterFill" class="match-meter-fill"></div>
+        </div>
+        <p id="matchLabel" class="match-label">&nbsp;</p>
+      </div>
+    </section>
+
+    <section class="controls">
+      <div class="controls-row">
+        <label for="threshold">Sensitivity</label>
+        <input type="range" id="threshold" min="0.3" max="0.95" step="0.01" value="0.72" />
+        <span id="thresholdValue">0.72</span>
+      </div>
+      <div class="controls-row">
+        <button id="resetAllBtn" class="btn btn-ghost">Reset all calibrations</button>
+        <label class="skeleton-toggle">
+          <input type="checkbox" id="skeletonToggle" checked />
+          Show skeleton
+        </label>
+      </div>
+    </section>
+
+    <section class="slots">
+      <h2>Cat poses</h2>
+      <p class="slots-hint">
+        Click <strong>Capture</strong> on a card while striking the pose you want linked to that image.
+        Hold still for a second — the countdown will grab your pose automatically.
+      </p>
+      <div id="slotsGrid" class="slots-grid"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Runs 100% in your browser. No images or video ever leave your device.</p>
+  </footer>
+
+  <!-- TensorFlow.js + MoveNet (pose-detection), vendored locally — see vendor/NOTICE.md -->
+  <script src="vendor/tf-core.min.js"></script>
+  <script src="vendor/tf-converter.min.js"></script>
+  <script src="vendor/tf-backend-webgl.min.js"></script>
+  <script src="vendor/pose-detection.min.js"></script>
+
+  <script src="poses-config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

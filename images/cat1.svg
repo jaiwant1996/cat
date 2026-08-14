@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="24" fill="#FFD966"/>
+  <!-- ears -->
+  <polygon points="55,70 40,20 90,55" fill="#F4A950"/>
+  <polygon points="145,70 160,20 110,55" fill="#F4A950"/>
+  <polygon points="58,66 48,32 82,56" fill="#FFE4B0"/>
+  <polygon points="142,66 152,32 118,56" fill="#FFE4B0"/>
+  <!-- face -->
+  <circle cx="100" cy="115" r="70" fill="#FFF3D6"/>
+  <!-- eyes: wide open surprised -->
+  <circle cx="75" cy="105" r="18" fill="#2B2118"/>
+  <circle cx="125" cy="105" r="18" fill="#2B2118"/>
+  <circle cx="80" cy="99" r="5" fill="#FFFFFF"/>
+  <circle cx="130" cy="99" r="5" fill="#FFFFFF"/>
+  <!-- eyebrows raised -->
+  <path d="M58,78 Q75,65 92,78" stroke="#2B2118" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M108,78 Q125,65 142,78" stroke="#2B2118" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- nose -->
+  <path d="M94,128 L106,128 L100,136 Z" fill="#E38B7C"/>
+  <!-- open mouth (surprised "o") -->
+  <ellipse cx="100" cy="152" rx="10" ry="13" fill="#2B2118"/>
+  <!-- whiskers -->
+  <line x1="20" y1="120" x2="60" y2="115" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+  <line x1="20" y1="135" x2="60" y2="132" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+  <line x1="180" y1="120" x2="140" y2="115" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+  <line x1="180" y1="135" x2="140" y2="132" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+</svg>

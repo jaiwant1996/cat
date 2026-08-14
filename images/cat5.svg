@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="24" fill="#A8D8B9"/>
+  <!-- ears -->
+  <polygon points="55,70 40,20 90,55" fill="#5FAE7C"/>
+  <polygon points="145,70 160,20 110,55" fill="#5FAE7C"/>
+  <polygon points="58,66 48,32 82,56" fill="#D7F0DE"/>
+  <polygon points="142,66 152,32 118,56" fill="#D7F0DE"/>
+  <!-- face -->
+  <circle cx="100" cy="115" r="70" fill="#EFFBF2"/>
+  <!-- laughing closed eyes ^ ^ -->
+  <path d="M60,102 L75,92 L90,102" stroke="#2B2118" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M110,102 L125,92 L140,102" stroke="#2B2118" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- tears of joy -->
+  <path d="M52,110 Q48,120 52,128 Q56,120 52,110 Z" fill="#7EC7E8"/>
+  <path d="M148,110 Q144,120 148,128 Q152,120 148,110 Z" fill="#7EC7E8"/>
+  <!-- nose -->
+  <path d="M94,130 L106,130 L100,138 Z" fill="#E38B7C"/>
+  <!-- wide open laughing mouth -->
+  <path d="M78,146 Q100,178 122,146 Q100,158 78,146 Z" fill="#2B2118"/>
+  <path d="M88,150 Q100,158 112,150" fill="#F5837A"/>
+  <!-- whiskers -->
+  <line x1="20" y1="125" x2="60" y2="122" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+  <line x1="20" y1="139" x2="60" y2="138" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+  <line x1="180" y1="125" x2="140" y2="122" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+  <line x1="180" y1="139" x2="140" y2="138" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+</svg>

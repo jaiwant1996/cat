@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="24" fill="#C9B6E4"/>
+  <!-- ears (droopy) -->
+  <polygon points="58,75 45,28 92,60" fill="#8E72B8"/>
+  <polygon points="142,75 155,28 108,60" fill="#8E72B8"/>
+  <polygon points="61,71 52,38 84,61" fill="#E7DBF5"/>
+  <polygon points="139,71 148,38 116,61" fill="#E7DBF5"/>
+  <!-- face -->
+  <circle cx="100" cy="118" r="70" fill="#F3ECFA"/>
+  <!-- closed sleepy eyes -->
+  <path d="M62,108 Q75,118 88,108" stroke="#2B2118" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M112,108 Q125,118 138,108" stroke="#2B2118" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <!-- nose -->
+  <path d="M94,132 L106,132 L100,140 Z" fill="#E38B7C"/>
+  <!-- small yawning mouth -->
+  <ellipse cx="100" cy="150" rx="7" ry="6" fill="#2B2118"/>
+  <!-- zzz -->
+  <text x="140" y="60" font-family="Georgia, serif" font-size="22" fill="#5B4585" font-weight="bold">z</text>
+  <text x="155" y="45" font-family="Georgia, serif" font-size="17" fill="#5B4585" font-weight="bold">z</text>
+  <text x="167" y="33" font-family="Georgia, serif" font-size="13" fill="#5B4585" font-weight="bold">z</text>
+  <!-- whiskers -->
+  <line x1="20" y1="128" x2="60" y2="125" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+  <line x1="20" y1="142" x2="60" y2="141" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+  <line x1="180" y1="128" x2="140" y2="125" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+  <line x1="180" y1="142" x2="140" y2="141" stroke="#2B2118" stroke-width="3" stroke-linecap="round"/>
+</svg>
