@@ -65,6 +65,14 @@ main {
 
 @media (max-width: 720px) {
   .stage { grid-template-columns: 1fr; }
+  /* Shrink the camera preview so the reveal panel fits in the same view
+     without scrolling — aspect-ratio keeps it proportional (75% width and
+     height, not just width). */
+  .video-wrap {
+    width: 75%;
+    max-width: 75%;
+    margin: 0 auto;
+  }
 }
 
 .video-wrap {
