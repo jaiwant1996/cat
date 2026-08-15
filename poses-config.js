@@ -29,7 +29,7 @@ const POSE_SLOTS = [
   { id: "cat5", label: "Sad Cat",     src: "img/cat-sad.jpg" },
   { id: "cat6", label: "Cute Cat",    src: "img/cat-cute.jpg" },
   { id: "cat7", label: "Karate Cat",  src: "img/cat-fight-2.jpg" },
-  { id: "cat8", label: "Scuba Cat",   src: "img/cat-scuba.png" },
+  { id: "cat8", label: "Scuba Cat",   src: "img/cat-scuba.gif" },
 ];
 
 // (The `images/` folder still has 5 placeholder doodles if you ever want
