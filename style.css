@@ -281,8 +281,16 @@ main {
 
 /* ---------------- Slots ---------------- */
 
+.slots-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
 .slots h2 {
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 20px;
 }
 
@@ -291,6 +299,29 @@ main {
   color: var(--text-dim);
   font-size: 14px;
 }
+
+.setup-banner {
+  background: rgba(255, 92, 138, 0.1);
+  border: 1px solid rgba(255, 92, 138, 0.35);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.setup-banner p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.setup-banner code {
+  background: var(--panel-alt);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
 
 .slots-grid {
   display: grid;
@@ -349,3 +380,13 @@ main {
 .slot-btn-row .btn-small { flex: 1; }
 
 .hidden { display: none !important; }
+
+/* ---------------- Setup mode vs. play mode ----------------
+   Calibration-only controls stay hidden by default (play mode, what regular
+   visitors see); they're only revealed while `body.setup-mode` is active.
+   This block is placed last on purpose so it wins over the component rules
+   above it (e.g. `.slot-btn-row { display: flex }`) at equal specificity. */
+.setup-only { display: none; }
+body.setup-mode .setup-only { display: revert; }
+body.setup-mode .controls-row.setup-only { display: flex; }
+body.setup-mode .slot-btn-row.setup-only { display: flex; }

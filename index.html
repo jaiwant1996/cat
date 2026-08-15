@@ -31,7 +31,7 @@
         <img id="revealImg" src="" alt="" />
         <div id="revealEmptyState" class="reveal-empty">
           <p>No pose matched yet.</p>
-          <p class="hint">Calibrate poses below, then strike one!</p>
+          <p id="revealEmptyHint" class="hint">Strike one of the poses below!</p>
         </div>
         <div id="matchMeter" class="match-meter">
           <div id="matchMeterFill" class="match-meter-fill"></div>
@@ -46,8 +46,15 @@
         <input type="range" id="threshold" min="0.3" max="0.95" step="0.01" value="0.72" />
         <span id="thresholdValue">0.72</span>
       </div>
-      <div class="controls-row">
+      <div class="controls-row setup-only">
         <button id="resetAllBtn" class="btn btn-ghost">Reset all calibrations</button>
+        <button id="exportBtn" class="btn btn-ghost">Export poses (.json)</button>
+        <label id="importLabel" class="btn btn-ghost">
+          Import poses
+          <input type="file" id="importInput" accept="application/json" hidden />
+        </label>
+      </div>
+      <div class="controls-row">
         <label class="skeleton-toggle">
           <input type="checkbox" id="skeletonToggle" checked />
           Show skeleton
@@ -56,11 +63,18 @@
     </section>
 
     <section class="slots">
-      <h2>Cat poses</h2>
-      <p class="slots-hint">
-        Click <strong>Capture</strong> on a card while striking the pose you want linked to that image.
-        Hold still for a second — the countdown will grab your pose automatically.
-      </p>
+      <div class="slots-heading-row">
+        <h2>Cat poses</h2>
+        <button id="setupToggleBtn" type="button" class="btn btn-ghost btn-tiny">⚙ Calibrate poses</button>
+      </div>
+      <p id="slotsHint" class="slots-hint"></p>
+      <div id="setupBanner" class="setup-banner setup-only">
+        <p>
+          <strong>No poses saved yet.</strong> Strike each pose below and hit <strong>Capture</strong>,
+          then click <strong>Export poses</strong> above to save a <code>calibrated-poses.json</code> file.
+          Drop that file into this project folder and reload — after that, visitors never need to calibrate anything.
+        </p>
+      </div>
       <div id="slotsGrid" class="slots-grid"></div>
     </section>
   </main>

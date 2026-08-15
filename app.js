@@ -35,6 +35,7 @@ const CLEAR_HOLD_FRAMES = 12;     // consecutive bad frames before clearing a ma
 const CAPTURE_COUNTDOWN_SEC = 3;  // seconds of countdown before capturing a pose
 const CAPTURE_SAMPLE_MS = 700;    // how long to sample frames while capturing
 const CALIBRATION_STORAGE_KEY = 'poseCatCalibrations_v1';
+const BUNDLED_POSES_URL = 'calibrated-poses.json';
 
 // ---------------------------------------------------------------------------
 // DOM references
@@ -53,6 +54,13 @@ const matchLabel = document.getElementById('matchLabel');
 const thresholdInput = document.getElementById('threshold');
 const thresholdValue = document.getElementById('thresholdValue');
 const resetAllBtn = document.getElementById('resetAllBtn');
+const exportBtn = document.getElementById('exportBtn');
+const importInput = document.getElementById('importInput');
+const importLabel = document.getElementById('importLabel');
+const setupToggleBtn = document.getElementById('setupToggleBtn');
+const setupBanner = document.getElementById('setupBanner');
+const slotsHint = document.getElementById('slotsHint');
+const revealEmptyHint = document.getElementById('revealEmptyHint');
 const skeletonToggle = document.getElementById('skeletonToggle');
 const slotsGrid = document.getElementById('slotsGrid');
 
@@ -65,7 +73,15 @@ let detector = null;
 let cameraRunning = false;
 let detecting = false;
 
-let calibrations = loadCalibrations();
+// Populated by init(): bundled poses (shipped with the site, so visitors
+// never have to calibrate) merged with anything saved in this browser.
+let calibrations = {};
+
+// Setup mode shows the Capture/Clear/Export controls. It defaults to ON only
+// when there are no saved poses yet (first-time setup); once poses exist —
+// either bundled or from a prior local calibration — it defaults to OFF so
+// regular visitors just see the video feed and cat cards.
+let setupMode = false;
 
 const matchState = { candidateId: null, candidateFrames: 0, currentMatchId: null, missFrames: 0 };
 const capture = { slotId: null, phase: 'idle', samples: [], sampleEndsAt: 0 };
@@ -94,6 +110,45 @@ function saveCalibrations() {
   }
 }
 
+// The poses shipped with the site (see calibrated-poses.json). This is what
+// lets visitors use the app with zero calibration of their own.
+async function loadBundledPoses() {
+  try {
+    const res = await fetch(BUNDLED_POSES_URL, { cache: 'no-store' });
+    if (!res.ok) return {};
+    const data = await res.json();
+    return data && typeof data === 'object' ? data : {};
+  } catch (e) {
+    console.warn('No bundled calibrated-poses.json yet (expected before first-time setup):', e);
+    return {};
+  }
+}
+
+function exportPoses() {
+  const blob = new Blob([JSON.stringify(calibrations, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'calibrated-poses.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function importPosesFromFile(file) {
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!data || typeof data !== 'object') throw new Error('not an object');
+    calibrations = { ...calibrations, ...data };
+    saveCalibrations();
+    refreshAllSlotStatuses();
+  } catch (e) {
+    console.error('Could not import poses file — is it a calibrated-poses.json export?', e);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Slot cards (built from POSE_SLOTS in poses-config.js)
 // ---------------------------------------------------------------------------
@@ -115,12 +170,12 @@ function buildSlots() {
     card.appendChild(label);
 
     const status = document.createElement('p');
-    status.className = 'slot-status';
+    status.className = 'slot-status setup-only';
     status.dataset.role = 'status';
     card.appendChild(status);
 
     const btnRow = document.createElement('div');
-    btnRow.className = 'slot-btn-row';
+    btnRow.className = 'slot-btn-row setup-only';
 
     const captureBtn = document.createElement('button');
     captureBtn.type = 'button';
@@ -207,6 +262,36 @@ resetAllBtn.addEventListener('click', () => {
   matchState.currentMatchId = null;
   showEmptyReveal();
 });
+
+exportBtn.addEventListener('click', exportPoses);
+
+importInput.addEventListener('change', () => {
+  const file = importInput.files[0];
+  if (file) importPosesFromFile(file);
+  importInput.value = '';
+});
+
+setupToggleBtn.addEventListener('click', () => {
+  setupMode = !setupMode;
+  updateSetupModeVisibility();
+});
+
+// ---------------------------------------------------------------------------
+// Setup mode (Capture/Clear/Export controls) vs. play mode (visitors)
+// ---------------------------------------------------------------------------
+function updateSetupModeVisibility() {
+  // CSS (`.setup-only`, `body.setup-mode .setup-only`) handles actually
+  // showing/hiding the calibration controls — this just flips the body class.
+  document.body.classList.toggle('setup-mode', setupMode);
+
+  setupToggleBtn.textContent = setupMode ? '✓ Done calibrating' : '⚙ Calibrate poses';
+  slotsHint.textContent = setupMode
+    ? 'Click Capture on a card while striking the pose you want linked to it. Hold still for a second — the countdown grabs your pose automatically. When you’re done, click "Export poses" above to save them into the site for good.'
+    : 'Strike one of the poses below in front of your camera!';
+  if (revealEmptyHint) {
+    revealEmptyHint.textContent = setupMode ? 'Calibrate poses below, then strike one!' : 'Strike one of the poses below!';
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Camera + model setup
@@ -580,5 +665,19 @@ thresholdInput.addEventListener('input', () => {
 // ---------------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------------
-buildSlots();
-thresholdValue.textContent = THRESHOLD.toFixed(2);
+async function init() {
+  const bundled = await loadBundledPoses();
+  // Bundled poses ship with the site (so visitors need zero calibration);
+  // anything saved locally in this browser layers on top of that.
+  calibrations = { ...bundled, ...loadCalibrations() };
+
+  // Only default into setup mode when nothing has been calibrated at all —
+  // i.e. this is the very first time anyone has set poses up for this site.
+  setupMode = Object.keys(calibrations).length === 0;
+
+  buildSlots();
+  updateSetupModeVisibility();
+  thresholdValue.textContent = THRESHOLD.toFixed(2);
+}
+
+init();
