@@ -28,7 +28,6 @@ const POSE_SLOTS = [
   { id: "cat4", label: "Fight Cat",   src: "img/cat-fight.jpeg" },
   { id: "cat5", label: "Sad Cat",     src: "img/cat-sad.jpg" },
   { id: "cat6", label: "Cute Cat",    src: "img/cat-cute.jpg" },
-  { id: "cat7", label: "Karate Cat",  src: "img/cat-fight-2.jpg" },
   { id: "cat8", label: "Scuba Cat",   src: "img/cat-scuba.gif" },
   { id: "cat9", label: "Karate Cat",  src: "img/karate-cat.jpg"}
 ];
