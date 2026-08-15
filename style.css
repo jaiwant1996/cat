@@ -30,6 +30,61 @@ main {
   padding: 0 20px 60px;
 }
 
+/* Plain-English privacy notice, shown to every first-time visitor */
+.privacy-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  background: rgba(107, 227, 163, 0.1);
+  border-bottom: 1px solid rgba(107, 227, 163, 0.3);
+}
+
+.privacy-banner-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.privacy-banner p {
+  margin: 0;
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.privacy-banner-dismiss {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid rgba(107, 227, 163, 0.5);
+  color: var(--good);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.privacy-banner-dismiss:hover {
+  background: rgba(107, 227, 163, 0.15);
+}
+
+.privacy-banner.hidden {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .privacy-banner {
+    flex-wrap: wrap;
+  }
+  .privacy-banner p {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
+
 .site-header {
   text-align: center;
   padding: 40px 20px 24px;

@@ -1,4 +1,4 @@
-# Pose-a-Cat 🐱
+# Copy Cat 🐱
 
 A tiny, no-build, static website: it watches your webcam, and when you strike
 a pose, it reveals the matching cat image — like the Instagram pose-matching
@@ -107,7 +107,7 @@ etc.)
    ```bash
    git init
    git add .
-   git commit -m "Pose-a-Cat site"
+   git commit -m "Copy Cat site"
    git branch -M main
    git remote add origin https://github.com/<your-username>/<your-repo>.git
    git push -u origin main

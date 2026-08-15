@@ -36,6 +36,7 @@ const CAPTURE_COUNTDOWN_SEC = 3;  // seconds of countdown before capturing a pos
 const CAPTURE_SAMPLE_MS = 700;    // how long to sample frames while capturing
 const CALIBRATION_STORAGE_KEY = 'poseCatCalibrations_v1';
 const BUNDLED_POSES_URL = 'calibrated-poses.json';
+const PRIVACY_BANNER_STORAGE_KEY = 'poseCatPrivacyBannerDismissed_v1';
 
 // ---------------------------------------------------------------------------
 // DOM references
@@ -63,6 +64,8 @@ const slotsHint = document.getElementById('slotsHint');
 const revealEmptyHint = document.getElementById('revealEmptyHint');
 const skeletonToggle = document.getElementById('skeletonToggle');
 const slotsGrid = document.getElementById('slotsGrid');
+const privacyBanner = document.getElementById('privacyBanner');
+const privacyBannerDismiss = document.getElementById('privacyBannerDismiss');
 
 // ---------------------------------------------------------------------------
 // State
@@ -88,6 +91,30 @@ const capture = { slotId: null, phase: 'idle', samples: [], sampleEndsAt: 0 };
 
 let resetArmed = false;
 let resetArmTimer = null;
+
+// ---------------------------------------------------------------------------
+// Privacy banner ("nothing is stored, everything stays on your device")
+// ---------------------------------------------------------------------------
+if (privacyBanner) {
+  let alreadyDismissed = false;
+  try {
+    alreadyDismissed = localStorage.getItem(PRIVACY_BANNER_STORAGE_KEY) === '1';
+  } catch (e) {
+    // localStorage unavailable (private browsing, etc.) — just show the banner every time.
+  }
+  if (alreadyDismissed) privacyBanner.classList.add('hidden');
+
+  if (privacyBannerDismiss) {
+    privacyBannerDismiss.addEventListener('click', () => {
+      privacyBanner.classList.add('hidden');
+      try {
+        localStorage.setItem(PRIVACY_BANNER_STORAGE_KEY, '1');
+      } catch (e) {
+        // Fine if this can't be remembered — it'll just show again next visit.
+      }
+    });
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Calibration storage
@@ -287,9 +314,11 @@ function updateSetupModeVisibility() {
   setupToggleBtn.textContent = setupMode ? '✓ Done calibrating' : '⚙ Calibrate poses';
   slotsHint.textContent = setupMode
     ? 'Click Capture on a card while striking the pose you want linked to it. Hold still for a second — the countdown grabs your pose automatically. When you’re done, click "Export poses" above to save them into the site for good.'
-    : 'Strike one of the poses below in front of your camera!';
+    : 'Pick a cat, strike its pose, hold still for a beat — and watch it appear like magic! 🐾';
   if (revealEmptyHint) {
-    revealEmptyHint.textContent = setupMode ? 'Calibrate poses below, then strike one!' : 'Strike one of the poses below!';
+    revealEmptyHint.textContent = setupMode
+      ? 'Calibrate poses below, then strike one!'
+      : 'Go on, strike a pose — I dare you! 😼';
   }
 }
 
