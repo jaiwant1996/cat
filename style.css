@@ -298,6 +298,18 @@ main {
   margin-left: auto;
 }
 
+/* ---------------- Finger-tracking status ---------------- */
+.hand-status {
+  font-size: 13px;
+  color: var(--text-dim);
+  transition: color 0.2s ease;
+}
+.hand-status:empty { display: none; }
+.hand-status.is-loading { color: var(--text-dim); }
+.hand-status.is-on { color: var(--text-dim); }
+.hand-status.is-live { color: #37d67a; font-weight: 600; } /* green when a hand is actually being tracked */
+.hand-status.is-off { color: #e0a23a; }                    /* amber: unavailable on this device */
+
 /* ---------------- Buttons ---------------- */
 
 .btn {

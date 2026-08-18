@@ -44,7 +44,10 @@ const SKELETON_EDGES = [
 //   second hand                                               -> 200-220
 const HAND_A_OFFSET = 100;
 const HAND_B_OFFSET = 200;
-const HAND_SCORE_THRESHOLD = 0.5; // MediaPipe Hands gives one confidence per hand, not per landmark
+// Low sanity floor only. MediaPipe Hands already thresholds internally before
+// returning a hand (a confidently-seen hand scores ~0.8), so we keep this
+// permissive — a higher value here was silently dropping good hands.
+const HAND_SCORE_THRESHOLD = 0.1;
 
 // A reduced, low-noise subset of the 21 MediaPipe Hands landmarks: the wrist
 // plus each finger's base knuckle and fingertip. This captures how
@@ -105,6 +108,7 @@ const setupBanner = document.getElementById('setupBanner');
 const slotsHint = document.getElementById('slotsHint');
 const revealEmptyHint = document.getElementById('revealEmptyHint');
 const skeletonToggle = document.getElementById('skeletonToggle');
+const handStatus = document.getElementById('handStatus');
 const slotsGrid = document.getElementById('slotsGrid');
 const privacyBanner = document.getElementById('privacyBanner');
 const privacyBannerDismiss = document.getElementById('privacyBannerDismiss');
@@ -116,6 +120,9 @@ let THRESHOLD = parseFloat(thresholdInput.value);
 
 let detector = null;
 let handDetector = null; // optional — app still works with body pose only if this fails to load
+let handTrackingStatus = 'idle'; // 'idle' | 'loading' | 'on' | 'unavailable'
+let handSeenNow = false;         // is at least one hand visible in the latest frame?
+let handEstimateFailures = 0;    // consecutive estimateHands() errors, to bail out of a broken loop
 let cameraRunning = false;
 let detecting = false;
 
@@ -366,6 +373,46 @@ function updateSetupModeVisibility() {
 }
 
 // ---------------------------------------------------------------------------
+// Finger-tracking status indicator
+// ---------------------------------------------------------------------------
+// Hand tracking can silently fail on some devices (especially phones, where
+// the extra model may not fit on the GPU). This little status line makes that
+// visible instead of leaving people wondering why fingers aren't tracked.
+function updateHandStatus() {
+  if (!handStatus) return;
+  handStatus.classList.remove('is-on', 'is-loading', 'is-off', 'is-live');
+
+  switch (handTrackingStatus) {
+    case 'loading':
+      handStatus.textContent = '✋ Finger tracking: starting…';
+      handStatus.classList.add('is-loading');
+      break;
+    case 'on':
+      if (handSeenNow) {
+        handStatus.textContent = '✋ Finger tracking: hand detected';
+        handStatus.classList.add('is-live');
+      } else {
+        handStatus.textContent = '✋ Finger tracking: on — raise a hand to see it';
+        handStatus.classList.add('is-on');
+      }
+      break;
+    case 'unavailable':
+      handStatus.textContent = '✋ Finger tracking isn’t available on this device — using body pose only';
+      handStatus.classList.add('is-off');
+      break;
+    default: // 'idle' — before the camera has started
+      handStatus.textContent = '';
+      break;
+  }
+}
+
+function setHandSeen(seen) {
+  if (seen === handSeenNow) return; // only touch the DOM when it actually changes
+  handSeenNow = seen;
+  if (handTrackingStatus === 'on') updateHandStatus();
+}
+
+// ---------------------------------------------------------------------------
 // Camera + model setup
 // ---------------------------------------------------------------------------
 async function startCamera() {
@@ -396,17 +443,22 @@ async function startCamera() {
     }
 
     // Hand/finger tracking is a bonus on top of body pose — if it fails to
-    // load for any reason, just carry on with body-only matching instead of
-    // blocking the whole app.
+    // load for any reason (e.g. a mobile GPU that can't fit the extra model),
+    // just carry on with body-only matching instead of blocking the whole app.
+    handTrackingStatus = 'loading';
+    updateHandStatus();
     try {
       handDetector = await handPoseDetection.createDetector(
         handPoseDetection.SupportedModels.MediaPipeHands,
         { runtime: 'tfjs', modelType: 'lite', maxHands: 2 }
       );
+      handTrackingStatus = 'on';
     } catch (err) {
       console.warn('Hand-tracking model failed to load — continuing with body pose only:', err);
       handDetector = null;
+      handTrackingStatus = 'unavailable';
     }
+    updateHandStatus();
   }
 
   try {
@@ -458,15 +510,30 @@ async function detectFrame() {
   if (video.readyState >= 2 && !detecting) {
     detecting = true;
     try {
-      const [poses, hands] = await Promise.all([
-        detector.estimatePoses(video, { flipHorizontal: false }),
-        handDetector
-          ? handDetector.estimateHands(video, { flipHorizontal: false }).catch((e) => {
-              console.error('Hand estimation error:', e);
-              return [];
-            })
-          : Promise.resolve([]),
-      ]);
+      // Run the two models one after the other rather than concurrently.
+      // Mobile GPUs have far less headroom, and having both models' tensors
+      // live at the same time is a common cause of the hand model silently
+      // failing (or the WebGL context dropping) on phones.
+      const poses = await detector.estimatePoses(video, { flipHorizontal: false });
+
+      let hands = [];
+      if (handDetector) {
+        try {
+          hands = await handDetector.estimateHands(video, { flipHorizontal: false });
+        } catch (e) {
+          console.error('Hand estimation error:', e);
+          handEstimateFailures += 1;
+          // If it keeps failing frame after frame, stop trying and tell the
+          // user, instead of silently limping along as body-only forever.
+          if (handEstimateFailures >= 10) {
+            handDetector = null;
+            handTrackingStatus = 'unavailable';
+            updateHandStatus();
+          }
+          hands = [];
+        }
+      }
+
       handlePoseResult(poses[0] || null, hands || []);
     } catch (e) {
       console.error('Pose estimation error:', e);
@@ -481,12 +548,28 @@ function handlePoseResult(pose, hands) {
   clearCanvas();
 
   if (!pose || !pose.keypoints) {
+    setHandSeen(false);
     registerMiss();
     updateMatchMeter(0, null);
     return;
   }
 
-  const validHands = (hands || []).filter((h) => (h.score || 0) >= HAND_SCORE_THRESHOLD);
+  // MediaPipe already applies its own confidence threshold before it returns
+  // a hand, so we trust anything it hands back that has actual keypoints
+  // (the earlier extra score gate was silently dropping perfectly good hands
+  // on some devices). HAND_SCORE_THRESHOLD is kept only as a low sanity floor.
+  const validHands = (hands || []).filter(
+    (h) => h && Array.isArray(h.keypoints) && h.keypoints.length > 0 &&
+           (h.score == null || h.score >= HAND_SCORE_THRESHOLD)
+  );
+
+  // Any successful frame with the hand model attached means it's working —
+  // clear the failure counter and mark tracking as "on".
+  if (handDetector) {
+    handEstimateFailures = 0;
+    if (handTrackingStatus !== 'on') { handTrackingStatus = 'on'; }
+  }
+  setHandSeen(validHands.length > 0);
 
   if (skeletonToggle.checked) {
     drawSkeleton(pose.keypoints);
