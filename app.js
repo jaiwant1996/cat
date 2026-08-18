@@ -21,6 +21,10 @@ const LEFT_SHOULDER = 5, RIGHT_SHOULDER = 6;
 const COMPARE_KEYPOINT_INDICES = new Set([5, 6, 7, 8, 9, 10, 11, 12]);
 const MIN_COMPARE_KEYPOINTS = 4;
 
+// Hand/finger landmarks (added below) get folded into this same comparison
+// set once HAND_LANDMARKS_USED is defined, so matching a saved pose also
+// matches finger shape, not just arm position.
+
 // Which pairs of keypoints to connect when drawing the skeleton overlay.
 const SKELETON_EDGES = [
   [0, 1], [0, 2], [1, 3], [2, 4],
@@ -28,6 +32,44 @@ const SKELETON_EDGES = [
   [5, 11], [6, 12], [11, 12],
   [11, 13], [13, 15], [12, 14], [14, 16],
 ];
+
+// ---------------------------------------------------------------------------
+// Hand / finger tracking
+// ---------------------------------------------------------------------------
+// Body keypoints use indices 0-16 (MoveNet). Hand landmarks (21 points per
+// hand, from MediaPipe Hands) get merged into the SAME normalized-keypoint
+// space using offset index ranges, so fingers combine seamlessly with the
+// body data in matching:
+//   first hand (by handedness, or array order as a fallback) -> 100-120
+//   second hand                                               -> 200-220
+const HAND_A_OFFSET = 100;
+const HAND_B_OFFSET = 200;
+const HAND_SCORE_THRESHOLD = 0.5; // MediaPipe Hands gives one confidence per hand, not per landmark
+
+// A reduced, low-noise subset of the 21 MediaPipe Hands landmarks: the wrist
+// plus each finger's base knuckle and fingertip. This captures how
+// open/closed/spread the hand is without the extra jitter of every
+// mid-finger joint (which mostly just tracks its neighboring tip anyway).
+const HAND_LANDMARKS_USED = [0, 4, 5, 8, 9, 12, 13, 16, 17, 20];
+
+// Hand-landmark connections for the skeleton overlay (indices are relative
+// to one hand's own 21-point set, per MediaPipe Hands' layout).
+const HAND_SKELETON_EDGES = [
+  [0, 1], [1, 2], [2, 3], [3, 4],        // thumb
+  [0, 5], [5, 6], [6, 7], [7, 8],        // index
+  [0, 9], [9, 10], [10, 11], [11, 12],   // middle
+  [0, 13], [13, 14], [14, 15], [15, 16], // ring
+  [0, 17], [17, 18], [18, 19], [19, 20], // pinky
+  [5, 9], [9, 13], [13, 17],             // palm
+];
+
+// Fold the hand landmarks into the main comparison set (see
+// COMPARE_KEYPOINT_INDICES above) so pose matching cares about finger shape
+// too, once a hand is detected.
+HAND_LANDMARKS_USED.forEach((i) => {
+  COMPARE_KEYPOINT_INDICES.add(HAND_A_OFFSET + i);
+  COMPARE_KEYPOINT_INDICES.add(HAND_B_OFFSET + i);
+});
 
 const SCORE_THRESHOLD = 0.3;      // minimum confidence to trust a keypoint
 const MATCH_HOLD_FRAMES = 6;      // consecutive good frames before confirming a match
@@ -73,6 +115,7 @@ const privacyBannerDismiss = document.getElementById('privacyBannerDismiss');
 let THRESHOLD = parseFloat(thresholdInput.value);
 
 let detector = null;
+let handDetector = null; // optional — app still works with body pose only if this fails to load
 let cameraRunning = false;
 let detecting = false;
 
@@ -351,6 +394,19 @@ async function startCamera() {
       startBtn.disabled = false;
       return;
     }
+
+    // Hand/finger tracking is a bonus on top of body pose — if it fails to
+    // load for any reason, just carry on with body-only matching instead of
+    // blocking the whole app.
+    try {
+      handDetector = await handPoseDetection.createDetector(
+        handPoseDetection.SupportedModels.MediaPipeHands,
+        { runtime: 'tfjs', modelType: 'lite', maxHands: 2 }
+      );
+    } catch (err) {
+      console.warn('Hand-tracking model failed to load — continuing with body pose only:', err);
+      handDetector = null;
+    }
   }
 
   try {
@@ -402,8 +458,16 @@ async function detectFrame() {
   if (video.readyState >= 2 && !detecting) {
     detecting = true;
     try {
-      const poses = await detector.estimatePoses(video, { flipHorizontal: false });
-      handlePoseResult(poses[0] || null);
+      const [poses, hands] = await Promise.all([
+        detector.estimatePoses(video, { flipHorizontal: false }),
+        handDetector
+          ? handDetector.estimateHands(video, { flipHorizontal: false }).catch((e) => {
+              console.error('Hand estimation error:', e);
+              return [];
+            })
+          : Promise.resolve([]),
+      ]);
+      handlePoseResult(poses[0] || null, hands || []);
     } catch (e) {
       console.error('Pose estimation error:', e);
     }
@@ -413,7 +477,7 @@ async function detectFrame() {
   requestAnimationFrame(detectFrame);
 }
 
-function handlePoseResult(pose) {
+function handlePoseResult(pose, hands) {
   clearCanvas();
 
   if (!pose || !pose.keypoints) {
@@ -422,11 +486,14 @@ function handlePoseResult(pose) {
     return;
   }
 
+  const validHands = (hands || []).filter((h) => (h.score || 0) >= HAND_SCORE_THRESHOLD);
+
   if (skeletonToggle.checked) {
     drawSkeleton(pose.keypoints);
+    validHands.forEach((h) => drawHandSkeleton(h));
   }
 
-  const normalized = normalizeKeypoints(pose.keypoints);
+  const normalized = normalizeKeypoints(pose.keypoints, validHands);
 
   if (capture.phase === 'sampling') {
     if (normalized) capture.samples.push(normalized);
@@ -452,7 +519,12 @@ function handlePoseResult(pose) {
 // Converts raw pixel-space keypoints into a coordinate system centered on the
 // shoulder midpoint and scaled by shoulder width. This makes matching mostly
 // invariant to where you stand and how close you are to the camera.
-function normalizeKeypoints(keypoints) {
+//
+// `hands` (optional) is the array of detected MediaPipe hands for this same
+// frame — their landmarks get folded into the SAME normalized space (using
+// offset index ranges, see HAND_A_OFFSET/HAND_B_OFFSET above) so a saved pose
+// can capture finger shape alongside body position.
+function normalizeKeypoints(keypoints, hands) {
   const ls = keypoints[LEFT_SHOULDER];
   const rs = keypoints[RIGHT_SHOULDER];
   if (!ls || !rs || ls.score < SCORE_THRESHOLD || rs.score < SCORE_THRESHOLD) {
@@ -469,6 +541,21 @@ function normalizeKeypoints(keypoints) {
       result[idx] = [(kp.x - centerX) / scale, (kp.y - centerY) / scale];
     }
   });
+
+  (hands || []).slice(0, 2).forEach((hand, i) => {
+    if (!hand || !hand.keypoints) return;
+    // Prefer handedness for a stable left/right offset across frames; fall
+    // back to detection order if handedness isn't reported.
+    const isRight = hand.handedness ? hand.handedness.toLowerCase().startsWith('right') : i === 0;
+    const offset = isRight ? HAND_A_OFFSET : HAND_B_OFFSET;
+    HAND_LANDMARKS_USED.forEach((landmarkIdx) => {
+      const kp = hand.keypoints[landmarkIdx];
+      if (kp) {
+        result[offset + landmarkIdx] = [(kp.x - centerX) / scale, (kp.y - centerY) / scale];
+      }
+    });
+  });
+
   return result;
 }
 
@@ -676,6 +763,32 @@ function drawSkeleton(keypoints) {
       ctx.arc(kp.x, kp.y, 5, 0, Math.PI * 2);
       ctx.fill();
     }
+  });
+}
+
+function drawHandSkeleton(hand) {
+  if (!hand || !hand.keypoints) return;
+  const pts = hand.keypoints;
+
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(255,220,90,0.9)';
+  ctx.fillStyle = '#FFDC5A';
+
+  HAND_SKELETON_EDGES.forEach(([i, j]) => {
+    const a = pts[i];
+    const b = pts[j];
+    if (a && b) {
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+  });
+
+  pts.forEach((kp) => {
+    ctx.beginPath();
+    ctx.arc(kp.x, kp.y, 3, 0, Math.PI * 2);
+    ctx.fill();
   });
 }
 

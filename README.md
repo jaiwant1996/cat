@@ -16,12 +16,14 @@ just opens the page, allows the camera, and starts striking poses.
 1. Your browser loads [MoveNet](https://www.tensorflow.org/hub/tutorials/movenet)
    (via TensorFlow.js, bundled locally in `vendor/`) — a small ML model that
    finds body keypoints (shoulders, elbows, wrists, hips, etc.) in each
-   webcam frame.
+   webcam frame. It also loads **MediaPipe Hands**, which tracks each
+   finger's position — so matching cares about hand/finger shape (peace
+   sign, fist, spread fingers, etc.), not just where your arms are.
 2. **You calibrate once, in "setup mode"**: for each cat image, you strike a
-   pose and hit "Capture." The app records your body keypoints, normalized
-   relative to your shoulders (so it doesn't matter how close you are to the
-   camera or where you're standing). Then you click **Export poses** to save
-   everything as `calibrated-poses.json`.
+   pose and hit "Capture." The app records your body keypoints and finger
+   positions together, normalized relative to your shoulders (so it doesn't
+   matter how close you are to the camera or where you're standing). Then
+   you click **Export poses** to save everything as `calibrated-poses.json`.
 3. That JSON file ships with the site. On every future page load — for you
    or anyone else — those poses are loaded automatically, and the site opens
    straight into "play mode": no calibration controls, just the video feed
@@ -58,9 +60,8 @@ button if you want to load a previously exported file back in.
 
 ## Using your own cat images
 
-The site currently points at the four images you already had in `img/`
-(`cat-idle.png`, `cat-punch.gif`, `cat-stretch.gif`, `cat-tongie.jpeg`). To
-change them:
+The site currently points at the images in `img/` — see `poses-config.js`
+for the current list. To change them:
 
 1. Drop your image files into the `img/` folder (`.jpg`, `.png`, `.webp`,
    `.gif` all work).
@@ -142,7 +143,14 @@ work there without any extra setup.
 
 - Works best with the upper body clearly visible and both shoulders in
   frame — that's what the matching is anchored to.
-- One person at a time (MoveNet here is running in single-pose mode).
+- Finger tracking (MediaPipe Hands) is a bonus layer on top of body pose: if
+  a visitor's browser can't load it for any reason, the site quietly falls
+  back to body-pose-only matching instead of breaking. Poses calibrated
+  before this feature shipped still work fine — they just don't have finger
+  data baked in. Re-calibrate (**⚙ Calibrate poses** → Capture → Export) to
+  add finger precision to a pose.
+- One person at a time (MoveNet here is running in single-pose mode; hand
+  tracking supports up to two hands).
 - Poses load with this precedence: `calibrated-poses.json` (shipped with the
   site) as the base, then anything saved in the current browser's
   `localStorage` layered on top. That local layer is what setup mode edits
